@@ -11,6 +11,7 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <omp.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -80,7 +81,6 @@ Color traceRay(const swRay &r, swScene scene, int depth) {
 
     c = (1 - refl - trans) * directColor + refl * rc + trans * tc;
 
-
     return c;
 }
 
@@ -123,25 +123,30 @@ int main() {
     float inv_sqr_ss = 1.0f / (float)(ss_size * ss_size);
 
     std::cout << "Rendering\n";
+    auto start = std::chrono::high_resolution_clock::now();
+#pragma omp parallel for schedule(static) default(none) shared(imageHeight, imageWidth, ss_size, subpixel_size, subpixel_center, camera, scene, depth, inv_sqr_ss, pixels)
     for (int j = 0; j < imageHeight; ++j) {
         for (int i = 0; i < imageWidth; ++i) {
             Color pixel_sum;
-            for (int ssi = 0; ssi < ss_size; ssi++){
-                for (int ssj = 0; ssj < ss_size; ssj++){
+            for (int ssi = 0; ssi < ss_size; ssi++) {
+                for (int ssj = 0; ssj < ss_size; ssj++) {
 
-                    float cx = ((float)i) + ((float)ssi * subpixel_size + subpixel_center);
-                    float cy = ((float)j) + ((float)ssj * subpixel_size + subpixel_center);
+                    float cx = ((float)i) +
+                               ((float)ssi * subpixel_size + subpixel_center);
+                    float cy = ((float)j) +
+                               ((float)ssj * subpixel_size + subpixel_center);
 
                     swRay r = camera.getRay(cx, cy);
                     pixel_sum += traceRay(r, scene, depth);
                 }
             }
             Color output_pixel = pixel_sum * inv_sqr_ss;
-            WriteColor((j * imageWidth + i) * numChannels, output_pixel, pixels);
+            WriteColor((j * imageWidth + i) * numChannels, output_pixel,
+                       pixels);
         }
     }
     stbi_write_png("out.png", imageWidth, imageHeight, numChannels, pixels,
                    imageWidth * numChannels);
     delete[] pixels;
-    std::cout << "Done.\n";
+    std::cout << "rendering done in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << " ms\n";
 }
