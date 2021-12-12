@@ -2,13 +2,15 @@
 #include "swIntersection.h"
 #include "swMaterial.h"
 #include "swRay.h"
+#include "Intersectable.h"
 
-class swSphere {
+class swSphere : public Intersectable {
   public:
     swSphere() = default;
+    ~swSphere() = default;
     swSphere(const swVec3 &c, const float &r, const swMaterial &m)
       : mCenter(c), mRadius(r), mMaterial(m) {}
-    bool intersect(const swRay &r, swIntersection &isect);
+    bool intersect(const swRay &r, swIntersection &isect) final;
 
   public:
     swVec3 mCenter;

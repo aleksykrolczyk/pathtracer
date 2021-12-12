@@ -5,9 +5,10 @@
 
 class swScene {
   public:
-    void push(const swSphere &s) { mSpheres.push_back(s); }
+    // TODO: this takes much longer when it's pointer instead of const ref ://
+    void push(Intersectable* s) { mObjs.push_back(s); }
     bool intersect(const swRay &r, swIntersection &isect, bool any = false);
 
   private:
-    std::vector<swSphere> mSpheres;
+    std::vector<Intersectable*> mObjs;
 };

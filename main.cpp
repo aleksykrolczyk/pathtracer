@@ -12,6 +12,7 @@
 #include <random>
 #include <vector>
 #include <omp.h>
+#include <memory>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -24,6 +25,12 @@
 #include "swScene.h"
 #include "swSphere.h"
 #include "swVec3.h"
+#include "Triangle.h"
+
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 const Color BLACK = Color(0, 0, 0);
 
@@ -98,17 +105,32 @@ int main() {
     mat[1] = swMaterial(swVec3(1.0f, 0.3f, 0.2f), 0.7f, 0.0f, 1.00f);
     mat[2] = swMaterial(swVec3(0.0f, 0.7f, 0.1f), 0.3f, 0.3f, 1.20f);
     mat[3] = swMaterial(swVec3(0.6f, 0.6f, 0.6f), 0.5f, 0.0f, 1.00f);
+    std::vector<PIntersectable> qqq;
     for (int i = 0; i < 2 * 2 * 2; i++) {
-        scene.push(swSphere(swVec3((float)(-6 + 12 * (i & 1)),
-                                   (float)(-6 + 12 * ((i >> 1) & 1)),
-                                   (float)(-6 + 12 * ((i >> 2) & 1))),
-                            3.5, mat[i % 3]));
+        scene.push(new swSphere(swVec3(
+                                      (float)(-6 + 12 * (i & 1)),
+                                      (float)(-6 + 12 * ((i >> 1) & 1)),
+                                      (float)(-6 + 12 * ((i >> 2) & 1))
+                                        ),
+                                 3.5, mat[i % 3]));
     }
-    scene.push(swSphere(swVec3(0, -210, 0), 200, mat[3]));
+
+    scene.push(new Triangle(
+      swVec3(-20.0f, -10.0f, 20.0f),
+      swVec3(20.0f, -10.0f, -20.0f),
+      swVec3(-20.0f, -10.0f, -20.0f),
+      mat[3]));
+    scene.push(new Triangle(
+      swVec3(-20.0f, -10.0f, 20.0f),
+      swVec3(20.0f, -10.0f, 20.0f),
+      swVec3(20.0f, -10.0f, -20.0f),
+      mat[3]));
 
     // Setup camera
     swVec3 eye(27, 17, 21);
+//    swVec3 eye(0, 30, 0);
     swVec3 lookAt(-1, -3, 0);
+//    swVec3 lookAt(0, 0, 0);
     swVec3 up(0, 1, 0);
     swCamera camera(eye, lookAt, up, 52.0f,
                     (float)imageWidth / (float)imageHeight);
