@@ -27,10 +27,11 @@
 #include "swVec3.h"
 #include "Triangle.h"
 
-template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
+#define PI 3.141592
+#define PI2 9.869604
+#define PI3 31.00627
+#define PI4 97.40909
+#define E 2.71828
 
 const Color BLACK = Color(0, 0, 0);
 
@@ -62,17 +63,20 @@ Color traceRay(const swRay &r, swScene scene, int depth) {
     Color c, directColor;
     if (depth < 0) return c;
 
-    const swVec3 gLightPos(20, 240, -7);
+//    const swVec3 gLightPos(20, 240, -7);
+//    const swVec3 gLightPos(275,500,275);
+    const swVec3 gLightPos(278,547, 0);
 
     swIntersection hp, si;
     if (!scene.intersect(r, hp)) return BLACK; // Background color
 
     swVec3 lightDir = gLightPos - hp.mPosition;
+    float dist = lightDir.length() / (PI4 * E); // ~ 264.785
     lightDir.normalize();
 
     bool is_illuminated = !scene.intersect(hp.getShadowRay(lightDir), si, true);
     directColor = is_illuminated ? hp.mMaterial.mColor : BLACK;
-    directColor = directColor * (hp.mNormal * lightDir);
+    directColor = directColor * (hp.mNormal * lightDir) / (dist * dist);
 
     float refl = hp.mMaterial.reflectivity;
     float trans = hp.mMaterial.transparency;
@@ -92,7 +96,7 @@ Color traceRay(const swRay &r, swScene scene, int depth) {
 }
 
 int main() {
-    int imageWidth = 512;
+    int imageWidth = 1024;
     int imageHeight = imageWidth;
     const int numChannels = 3;
     uint8_t *pixels = new uint8_t[imageWidth * imageHeight * numChannels];
@@ -105,32 +109,117 @@ int main() {
     mat[1] = swMaterial(swVec3(1.0f, 0.3f, 0.2f), 0.7f, 0.0f, 1.00f);
     mat[2] = swMaterial(swVec3(0.0f, 0.7f, 0.1f), 0.3f, 0.3f, 1.20f);
     mat[3] = swMaterial(swVec3(0.6f, 0.6f, 0.6f), 0.5f, 0.0f, 1.00f);
-    std::vector<PIntersectable> qqq;
-    for (int i = 0; i < 2 * 2 * 2; i++) {
-        scene.push(new swSphere(swVec3(
-                                      (float)(-6 + 12 * (i & 1)),
-                                      (float)(-6 + 12 * ((i >> 1) & 1)),
-                                      (float)(-6 + 12 * ((i >> 2) & 1))
-                                        ),
-                                 3.5, mat[i % 3]));
+
+    const swMaterial WHITE_MAT = swMaterial(swVec3(1.0f, 1.0f, 1.0), 0.0f, 0.0f, 1.01f);
+    const swMaterial GREEN_MAT = swMaterial(swVec3(0.3125f, 0.86f, 0.39f), 0.0f, 0.0f, 1.01f);
+    const swMaterial RED_MAT = swMaterial(swVec3(0.9f, 0.36f, 0.36f), 0.0f, 0.0f, 1.01f);
+    const swMaterial YELLOWISH_MAT = swMaterial(swVec3(0.95f, 0.865f, 0.49f), 0.0f, 0.0f, 1.01f);
+    const swMaterial MIRROR = swMaterial(swVec3(0.6f, 0.6f, 0.6), 0.2f, 0.0f, 1.01f);
+    const swMaterial GLASS = swMaterial(swVec3(1.0f, 1.0f, 1.0), 0.1f, 0.9f, 1.01f);
+
+//    swSphere spheres[] = {//Scene: center, radius, material
+//      swSphere(swVec3( 1e5+1,40.8,81.6),  1e5,  mat[0]),//Left
+//      swSphere(swVec3(-1e5+99,40.8,81.6), 1e5,  mat[0]),//Rght
+//      swSphere(swVec3(50,40.8, 1e5),      1e5,  mat[0]),//Back
+//      swSphere(swVec3(50,40.8,-1e5+170),  1e5,  mat[0]),//Frnt
+//      swSphere(swVec3(50, 1e5, 81.6),     1e5,  mat[0]),//Botm
+//      swSphere(swVec3(50,+1e5+100,81.6), 1e5,  mat[0]),//Top
+//      swSphere(swVec3(27,16.5,47),        16.5, mat[1]),//Mirr
+//      swSphere(swVec3(73,16.5,78),        16.5, mat[1]),//Glas
+//      swSphere(swVec3(50,681.6-.27,81.6), 600,  mat[0]) //Lite
+//    };
+
+    scene.push(new swSphere(swVec3(400,75,300), 75, MIRROR));
+    scene.push(new swSphere(swVec3(150,75,200), 75, GLASS));
+
+
+//    for (int i = 0; i < 2 * 2 * 2; i++) {
+//        scene.push(new swSphere(swVec3(
+//                                      (float)(-6 + 12 * (i & 1)),
+//                                      (float)(-6 + 12 * ((i >> 1) & 1)),
+//                                      (float)(-6 + 12 * ((i >> 2) & 1))
+//                                        ),
+//                                 3.5, mat[i % 3]));
+//    }
+
+    Triangle box[] = {
+        /// floor
+        Triangle(
+            swVec3(552.8, 000.0, 000.0),
+            swVec3(000.0, 000.0, 000.0),
+            swVec3(000.0, 000.0, 559.2),
+        YELLOWISH_MAT
+            ),
+        Triangle(
+            swVec3(552.8, 000.0, 000.0),
+            swVec3(000.0, 000.0, 559.2),
+            swVec3(549.6, 000.0, 559.2),
+        YELLOWISH_MAT
+            ),
+        // left wall
+        Triangle(
+            swVec3(552.8, 000.0, 000.0),
+            swVec3(549.6, 000.0, 559.2),
+            swVec3(556.0, 548.8, 559.2),
+            RED_MAT
+        ),
+        Triangle(
+            swVec3(552.8, 000.0, 000.0),
+            swVec3(556.0, 548.8, 000.0),
+            swVec3(556.0, 548.8, 559.2),
+            RED_MAT
+        ),
+
+        // right wall
+        Triangle(
+            swVec3(000.0, 000.0, 559.2),
+            swVec3(000.0, 000.0, 000.0),
+            swVec3(000.0, 548.8, 000.0),
+            GREEN_MAT
+        ),
+        Triangle(
+            swVec3(000.0, 000.0, 559.2),
+            swVec3(000.0, 548.8, 559.2),
+            swVec3(000.0, 548.8, 000.0),
+        GREEN_MAT
+        ),
+        // back wall
+        Triangle(
+            swVec3(549.6, 000.0, 559.2),
+            swVec3(000.0, 000.0, 559.2),
+            swVec3(000.0, 548.8, 559.2),
+            WHITE_MAT
+        ),
+        Triangle(
+            swVec3(549.6, 000.0, 559.2),
+            swVec3(556.0, 548.8, 559.2),
+            swVec3(000.0, 548.8, 559.2),
+        WHITE_MAT
+        ),
+      // ceiling
+      Triangle(
+        swVec3(556.0, 548.0, 000.0),
+        swVec3(556.0, 548.8, 559.2),
+        swVec3(000.0, 548.8, 559.2),
+        WHITE_MAT
+        ),
+      Triangle(
+        swVec3(556.0, 548.0, 000.0),
+        swVec3(000.0, 548.8, 000.0),
+        swVec3(000.0, 548.8, 559.2),
+        WHITE_MAT
+        ),
+    };
+
+    for (auto& triangle : box) {
+        scene.push(&triangle);
     }
 
-    scene.push(new Triangle(
-      swVec3(-20.0f, -10.0f, 20.0f),
-      swVec3(20.0f, -10.0f, -20.0f),
-      swVec3(-20.0f, -10.0f, -20.0f),
-      mat[3]));
-    scene.push(new Triangle(
-      swVec3(-20.0f, -10.0f, 20.0f),
-      swVec3(20.0f, -10.0f, 20.0f),
-      swVec3(20.0f, -10.0f, -20.0f),
-      mat[3]));
+
 
     // Setup camera
-    swVec3 eye(27, 17, 21);
-//    swVec3 eye(0, 30, 0);
-    swVec3 lookAt(-1, -3, 0);
-//    swVec3 lookAt(0, 0, 0);
+    swVec3 eye(278,273,-800);
+    swVec3 lookAt(278,273,1);
     swVec3 up(0, 1, 0);
     swCamera camera(eye, lookAt, up, 52.0f,
                     (float)imageWidth / (float)imageHeight);
@@ -150,19 +239,22 @@ int main() {
     for (int j = 0; j < imageHeight; ++j) {
         for (int i = 0; i < imageWidth; ++i) {
             Color pixel_sum;
-            for (int ssi = 0; ssi < ss_size; ssi++) {
-                for (int ssj = 0; ssj < ss_size; ssj++) {
-
-                    float cx = ((float)i) +
-                               ((float)ssi * subpixel_size + subpixel_center);
-                    float cy = ((float)j) +
-                               ((float)ssj * subpixel_size + subpixel_center);
-
-                    swRay r = camera.getRay(cx, cy);
-                    pixel_sum += traceRay(r, scene, depth);
-                }
-            }
-            Color output_pixel = pixel_sum * inv_sqr_ss;
+//            for (int ssi = 0; ssi < ss_size; ssi++) {
+//                for (int ssj = 0; ssj < ss_size; ssj++) {
+//
+//                    float cx = ((float)i) +
+//                               ((float)ssi * subpixel_size + subpixel_center);
+//                    float cy = ((float)j) +
+//                               ((float)ssj * subpixel_size + subpixel_center);
+//
+//                    swRay r = camera.getRay(cx, cy);
+//                    pixel_sum += traceRay(r, scene, depth);
+//                }
+//            }
+            swRay r = camera.getRay((float)i, (float)j);
+            pixel_sum += traceRay(r, scene, depth);
+            Color output_pixel = pixel_sum;
+//            Color output_pixel = pixel_sum * inv_sqr_ss;
             WriteColor((j * imageWidth + i) * numChannels, output_pixel,
                        pixels);
         }

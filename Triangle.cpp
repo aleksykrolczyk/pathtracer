@@ -40,7 +40,7 @@ bool Triangle::intersect(const swRay &r, swIntersection &isect) {
     auto s = -r.dir * n;
     auto t = rr * n / s;
     auto v = -r.dir * (rr % e2) / s;
-    if (t < 0)
+    if (t < r.minT || t > r.maxT)
         return false;
     auto w = -r.dir * (e1 % rr) / s;
     if (v < 0 || w < 0 || v + w >= 1)
