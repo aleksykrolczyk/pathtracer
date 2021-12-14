@@ -1,7 +1,48 @@
+#include <random>
 #include "swIntersection.h"
+#include "CONSTS.h"
 
-swRay swIntersection::getShadowRay(const swVec3 &L) {
-    return swRay(mPosition, L, 0.0f, 0.01f, FLT_MAX);
+float uniform() {
+    // Will be used to obtain a seed for the random number engine
+    static std::random_device rd;
+    // Standard mersenne_twister_engine seeded with rd()
+    static std::mt19937 gen(rd());
+    static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+    return dis(gen);
+}
+
+swVec3 getRandomRayDir(swVec3 vec) {
+    // randomly sampled from hemisphere directed as vec
+    while(true) {
+        float phi = uniform() * 2.0f * PI;
+        float theta = uniform() * PI;
+        auto cart_vec = swVec3(
+          cos(phi) * sin(theta),
+          sin(phi) * sin(theta),
+          cos(theta)
+        );
+
+        if (vec * cart_vec > 0) {
+            return cart_vec;
+        }
+    }
+}
+
+//swVec3 getRandomCosineWeightedRay(swVec3 vec) {
+//    // randomly sampled from hemisphere directed as vec
+//    while(true) {
+//        float phi = uniform() * 2.0f * PI;
+//        float theta = uniform() * PI;
+//
+//    }
+//}
+
+swRay swIntersection::getRandomRay() const {
+    return {mPosition, getRandomRayDir(mNormal), 0.0f, 0.01f, FLT_MAX};
+}
+
+swRay swIntersection::getShadowRay(const swVec3 &L) const {
+    return {mPosition, L, 0.0f, 0.01f, FLT_MAX};
 }
 
 swRay swIntersection::getReflectedRay(void) {

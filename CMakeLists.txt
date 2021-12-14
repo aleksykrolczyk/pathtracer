@@ -64,7 +64,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 set_property (CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES})
 
 # Set up the executable.
-add_executable(raytracer Triangle.cpp Triangle.h Intersectable.h)
+add_executable(raytracer Triangle.cpp Triangle.h Intersectable.h CONSTS.h)
 target_sources(
   raytracer
   PRIVATE

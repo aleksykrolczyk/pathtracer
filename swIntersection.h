@@ -4,10 +4,10 @@
 
 class swIntersection {
   public:
-    swRay getShadowRay(const swVec3 &L);
+    swRay getShadowRay(const swVec3 &L) const;
     swRay getReflectedRay(void);
     swRay getRefractedRay(void);
-
+    swRay getRandomRay(void) const;
   public:
     float mHitTime{FLT_MAX};
     swVec3 mPosition;

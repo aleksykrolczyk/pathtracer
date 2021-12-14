@@ -59,6 +59,9 @@ class swVec3 {
         m[2] *= l;
         return *this;
     }
+    swVec3 elemMul(const swVec3 &v) {
+        return swVec3(m[0]*v.m[0], m[1]*v.m[1], m[2]*v.m[2]);
+    }
     float length() {
         return std::sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]);
     }
