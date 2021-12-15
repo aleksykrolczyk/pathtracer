@@ -28,8 +28,7 @@
 #include "Triangle.h"
 #include "CONSTS.h"
 
-#define ALPHA 0.5f
-#define EMITTANCE 2.0f
+
 
 const Color BLACK = Color(0, 0, 0);
 const Color WHITE = Color(1.0f, 1.0f, 1.0f);
@@ -58,41 +57,57 @@ void WriteColor(int index, swVec3 p, uint8_t *pixels) {
     }
 }
 
-
+//const swVec3 lightPos(275, 470, 250);
+//(556.0, 548.8, 559.2)
+const swVec3 lightPos(500.0, 250, 250);
+#define ALPHA 0.1f
+#define COEFF 0.9f
+#define EMITTANCE 1.0f
 Color traceRay(const swRay &r, swScene scene, int depth) {
     swIntersection hp, si;
     if (!scene.intersect(r, hp)) {
         return BLACK;
     }
 
-    if (depth >= 10) {
-        return BLACK;
-    }
-
-    if (hp.mMaterial.emits_light() > 0 && depth == 0) {
-        return WHITE;
-    }
-
-    if (hp.mMaterial.emits_light() > 0) {
-        float dist = hp.mHitTime / (PI4 * E);
-        return hp.mMaterial.emittance / (dist * dist);
-    }
-
     swVec3 c = hp.mMaterial.mColor;
 
-    swVec3 received;
-    if (depth >= 9) {
-        received = BLACK;
-    } else {
-        received = traceRay(hp.getRandomRay(), scene, depth + 1);
-//        received = received.elemMul(traceRay(hp.getRandomRay(), scene, depth + 1));
+    float rul = 1.0f;
+    if (depth > 5) {
+        auto x = uniform2();
+        if (x < ALPHA) {
+            return BLACK;
+        }
+        rul = 1 / COEFF;
     }
+
+    swVec3 lightDir = lightPos - hp.mPosition;
+    float ldist = lightDir.length();
+    float dist = ldist / (PI4 * 1.5); // ~ 264.785
+    lightDir.normalize();
+
+    bool is_illuminated = !scene.intersect(hp.getShadowRay(lightDir, ldist), si, true);
+    directColor =  is_illuminated ? hp.mMaterial.mColor * (hp.mNormal * lightDir) * EMITTANCE / (dist * dist) : BLACK;
+
+    auto y = uniform2();
+    auto refl = hp.mMaterial.reflectivity;
+    auto trans = hp.mMaterial.transparency;
+
+    if (y < refl) {
+        return traceRay(hp.getReflectedRay(), scene, depth + 1) * rul;
+    }
+    if (y > refl && y < refl + trans) {
+        return traceRay(hp.getRefractedRay(), scene, depth + 1) * rul;
+    }
+
+
+    auto newRay = hp.getRandomRay();
+    auto cosTerm = newRay.dir * hp.mNormal;
 
     return hp.mMaterial.emittance + c.elemMul(received);
 }
 
 int main() {
-    int imageWidth = 512;
+    int imageWidth = 1024;
     int imageHeight = imageWidth;
     const int numChannels = 3;
     uint8_t *pixels = new uint8_t[imageWidth * imageHeight * numChannels];
@@ -130,7 +145,7 @@ int main() {
     scene.push(new swSphere(swVec3(400,75,300), 75, MIRROR));
     scene.push(new swSphere(swVec3(150,75,200), 75, GLASS));
 
-    scene.push(new swSphere(swVec3(275.0f, 500.0f, 275.0f), 80, WHITE_LIGHT));
+//    scene.push(new swSphere(swVec3(275.0f, 500.0f, 275.0f), 80, WHITE_LIGHT));
 
 
 //    for (int i = 0; i < 2 * 2 * 2; i++) {
@@ -201,13 +216,13 @@ int main() {
         swVec3(556.0, 548.0, 000.0),
         swVec3(556.0, 548.8, 559.2),
         swVec3(000.0, 548.8, 559.2),
-        YELLOWISH_MAT
+        WHITE_MAT
         ),
       Triangle(
         swVec3(556.0, 548.0, 000.0),
         swVec3(000.0, 548.8, 000.0),
         swVec3(000.0, 548.8, 559.2),
-        YELLOWISH_MAT
+        WHITE_MAT
         ),
     };
 
@@ -216,7 +231,7 @@ int main() {
     }
 
     // Setup camera
-    swVec3 eye(278,273,-800);
+    swVec3 eye(278,273,-530);
     swVec3 lookAt(278,273,1);
     swVec3 up(0, 1, 0);
     swCamera camera(eye, lookAt, up, 52.0f,
@@ -225,7 +240,7 @@ int main() {
 
     // Ray Trace pixels
     int depth = 0;
-    int ss_size = 100;
+    int ss_size = 1000;
 
     float subpixel_center = (1.0f / (float)ss_size) / 2;
     float subpixel_size = 1.0f / (float)ss_size;
@@ -250,7 +265,8 @@ int main() {
 //                }
 //            }
             for(int ss = 0; ss < ss_size; ss++) {
-                swRay r = camera.getRay((float)i, (float)j);
+                float u1 = uniform2() - 0.5f, u2 = uniform2() - 0.5f;
+                swRay r = camera.getRay((float)i + u1, (float)j + u2);
                 pixel_sum += traceRay(r, scene, 0);
             }
             Color output_pixel = pixel_sum / ss_size;
