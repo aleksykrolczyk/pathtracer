@@ -19,6 +19,7 @@ class Triangle : public Intersectable
     Triangle(const swVec3 &vtx1, const swVec3 &vtx2, const swVec3 &vtx3, const swMaterial &material);
 
     bool intersect(const swRay &r, swIntersection &isect) final;
+    bool intersect(const swRay &r) const;
 
   public:
     swVec3 v0;

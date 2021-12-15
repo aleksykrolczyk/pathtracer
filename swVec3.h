@@ -2,6 +2,7 @@
 #define _USE_MATH_DEFINES
 #include <cfloat>
 #include <cmath>
+#include <cstdio>
 
 class swVec3 {
   public:
@@ -59,11 +60,20 @@ class swVec3 {
         m[2] *= l;
         return *this;
     }
-    swVec3 elemMul(const swVec3 &v) {
-        return swVec3(m[0]*v.m[0], m[1]*v.m[1], m[2]*v.m[2]);
+    swVec3 elemMul(const swVec3 &v) const {
+        return {m[0]*v.m[0], m[1]*v.m[1], m[2]*v.m[2]};
     }
-    float length() {
+    float length() const {
         return std::sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]);
+    }
+    float max() const {
+        return m[0] > m[1] && m[0] > m[2] ? m[0] : m[1] > m[2] ? m[1] : m[2];
+    }
+    float min() const {
+        return m[0] < m[1] && m[0] < m[2] ? m[0] : m[1] < m[2] ? m[1] : m[2];
+    }
+    void print() const{
+        printf("%f, %f, %f\n", m[0], m[1], m[2]);
     }
 
   public:

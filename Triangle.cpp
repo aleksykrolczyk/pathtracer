@@ -4,6 +4,9 @@
 
 #include <iostream>
 #include "Triangle.h"
+
+#define EPSILON 0.001
+
 bool Triangle::intersect(const swRay &r, swIntersection &isect) {
 //    auto nr = n * r.dir;
 //    auto t = (n * r.orig + d) / nr;
@@ -38,6 +41,9 @@ bool Triangle::intersect(const swRay &r, swIntersection &isect) {
 
     auto rr = r.orig - v0;
     auto s = -r.dir * n;
+    if (fabs(s) < EPSILON) {
+        return false;
+    }
     auto t = rr * n / s;
     if (t < r.minT || t > r.maxT)
         return false;
@@ -55,6 +61,23 @@ bool Triangle::intersect(const swRay &r, swIntersection &isect) {
     isect.mPosition = q;
     isect.mMaterial = mMaterial;
     isect.mRay = r;
+    return true;
+}
+
+bool Triangle::intersect(const swRay &r) const {
+    auto rr = r.orig - v0;
+    auto s = -r.dir * n;
+    if (fabs(s) < EPSILON) {
+        return false;
+    }
+    auto t = rr * n / s;
+    if (t < r.minT || t > r.maxT)
+        return false;
+    auto v = -r.dir * (rr % e2) / s;
+    auto w = -r.dir * (e1 % rr) / s;
+    if (v < 0 || w < 0 || v + w >= 1)
+        return false;
+
     return true;
 }
 

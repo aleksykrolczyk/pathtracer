@@ -27,8 +27,9 @@
 #include "swVec3.h"
 #include "Triangle.h"
 #include "CONSTS.h"
-
-
+#include "Thing.h"
+#include "myTeapot.h"
+#include "cube.h"
 
 const Color BLACK = Color(0, 0, 0);
 const Color WHITE = Color(1.0f, 1.0f, 1.0f);
@@ -145,7 +146,17 @@ int main() {
     scene.push(new swSphere(swVec3(400,75,300), 75, MIRROR));
     scene.push(new swSphere(swVec3(150,75,200), 75, GLASS));
 
-//    scene.push(new swSphere(swVec3(275.0f, 500.0f, 275.0f), 80, WHITE_LIGHT));
+    scene.push(new swSphere(lightPos, 600, WHITE_LIGHT));
+
+    auto transform = scale(200,200,200);
+//    auto rotationX = rotateX(PI/4);
+    auto rotationY = rotateY(PI/8);
+    transform = transform * rotationY;
+    auto translate = swVec3(175,100,100);
+    auto czajnik = new Thing(myTeapotVertices, myTeapotVertexCount, transform, translate, GLASS);
+    scene.push(czajnik);
+//    auto wesoly_kostek = new Thing(cubeVertices, cubeVertexCount, transform, translate, GLASS);
+//    scene.push(wesoly_kostek);
 
 
 //    for (int i = 0; i < 2 * 2 * 2; i++) {
@@ -248,7 +259,8 @@ int main() {
 
     std::cout << "Rendering\n";
     auto start = std::chrono::high_resolution_clock::now();
-#pragma omp parallel for schedule(static) default(none) shared(imageHeight, imageWidth, ss_size, subpixel_size, subpixel_center, camera, scene, depth, inv_sqr_ss, pixels)
+
+#pragma omp parallel for schedule(static) default(none) shared(imageHeight, imageWidth, ss_size, subpixel_size, subpixel_center, camera, scene, depth, inv_sqr_ss, pixels, std::cout)
     for (int j = 0; j < imageHeight; ++j) {
         for (int i = 0; i < imageWidth; ++i) {
             Color pixel_sum;
@@ -264,6 +276,7 @@ int main() {
 //                    pixel_sum += traceRay(r, scene, depth);
 //                }
 //            }
+//            std::cout << i << " " << j << " ";
             for(int ss = 0; ss < ss_size; ss++) {
                 float u1 = uniform2() - 0.5f, u2 = uniform2() - 0.5f;
                 swRay r = camera.getRay((float)i + u1, (float)j + u2);
