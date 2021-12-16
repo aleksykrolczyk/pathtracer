@@ -4,7 +4,7 @@
 
 class swIntersection {
   public:
-    swRay getShadowRay(const swVec3 &L) const;
+    swRay getShadowRay(const swVec3 &L, float d) const;
     swRay getReflectedRay(void);
     swRay getRefractedRay(void);
     swRay getRandomRay(void) const;

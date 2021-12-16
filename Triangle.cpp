@@ -8,36 +8,8 @@
 #define EPSILON 0.001
 
 bool Triangle::intersect(const swRay &r, swIntersection &isect) {
-//    auto nr = n * r.dir;
-//    auto t = (n * r.orig + d) / nr;
-////    if (t < 0)
-////        return false; // triangle is behind
-//
-//    auto q = r.orig + t * r.dir;
-//
-////    if (t < r.minT || t > r.maxT)
-////        return false;
-//
-//    swVec3 C;
-//
-//    C = (v1 - v0) % (q - v0);
-//    if (n * C < 0) return false;
-//
-//    C = (v2 - v1) % (q - v1);
-//    if (n * C < 0) return false;
-//
-//    C = (v0 - v2) % (q - v2);
-//    if (n * C < 0) return false;
 
-//    auto rr = q - v0;
-//    auto ln = n.length();
-//    auto v = (e1 % rr).length()/ln;
-//    auto w = (rr % e2).length()/ln;
-//
-//    if (v < 0 || w < 0 || v + w >= 1)
-//        return false;
-
-    // TODO: cleanup, optimize, remove artifacts etc.
+    // TODO: cleanup, optimize
 
     auto rr = r.orig - v0;
     auto s = -r.dir * n;

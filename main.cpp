@@ -58,22 +58,60 @@ void WriteColor(int index, swVec3 p, uint8_t *pixels) {
     }
 }
 
+Mat3 scale(float x, float y, float z) {
+    swVec3 v0(x,0,0);
+    swVec3 v1(0,y,0);
+    swVec3 v2(0,0,z);
+    return { v0, v1, v2 };
+}
+
+Mat3 rotateX(float alpha) {
+    auto _sin = sin(alpha);
+    auto _cos = cos(alpha);
+    swVec3 v0(1,0,   0);
+    swVec3 v1(0,_cos,-_sin);
+    swVec3 v2(0,_sin,_cos);
+    return { v0, v1, v2 };
+}
+
+Mat3 rotateY(float alpha) {
+    auto _sin = sin(alpha);
+    auto _cos = cos(alpha);
+    swVec3 v0(_cos, 0,_sin);
+    swVec3 v1(0,    1,0);
+    swVec3 v2(-_sin,0,_cos);
+    return { v0, v1, v2 };
+}
+
+Mat3 rotateZ(float alpha) {
+    auto _sin = sin(alpha);
+    auto _cos = cos(alpha);
+    swVec3 v0(_cos, -_sin,0);
+    swVec3 v1(_sin, _cos, 0);
+    swVec3 v2(0,    0,    1);
+    return { v0, v1, v2 };
+}
+
 //const swVec3 lightPos(275, 470, 250);
 //(556.0, 548.8, 559.2)
-const swVec3 lightPos(500.0, 250, 250);
+const swVec3 lightPos(275.0, 1110, 275);
 #define ALPHA 0.1f
 #define COEFF 0.9f
-#define EMITTANCE 1.0f
+#define EMITTANCE 5.0f
 Color traceRay(const swRay &r, swScene scene, int depth) {
+    Color directColor, indirect;
     swIntersection hp, si;
+
     if (!scene.intersect(r, hp)) {
         return BLACK;
     }
 
-    swVec3 c = hp.mMaterial.mColor;
+    if (hp.mMaterial.emits_light()) {
+        return hp.mMaterial.emittance;
+    }
 
     float rul = 1.0f;
-    if (depth > 5) {
+    if (depth > 7) {
         auto x = uniform2();
         if (x < ALPHA) {
             return BLACK;
@@ -86,8 +124,7 @@ Color traceRay(const swRay &r, swScene scene, int depth) {
     float dist = ldist / (PI4 * 1.5); // ~ 264.785
     lightDir.normalize();
 
-    bool is_illuminated = !scene.intersect(hp.getShadowRay(lightDir, ldist), si, true);
-    directColor =  is_illuminated ? hp.mMaterial.mColor * (hp.mNormal * lightDir) * EMITTANCE / (dist * dist) : BLACK;
+    directColor = hp.mMaterial.mColor;
 
     auto y = uniform2();
     auto refl = hp.mMaterial.reflectivity;
@@ -104,7 +141,7 @@ Color traceRay(const swRay &r, swScene scene, int depth) {
     auto newRay = hp.getRandomRay();
     auto cosTerm = newRay.dir * hp.mNormal;
 
-    return hp.mMaterial.emittance + c.elemMul(received);
+    return directColor.elemMul(traceRay(newRay, scene, depth + 1)) * cosTerm * rul;
 }
 
 int main() {
@@ -122,29 +159,17 @@ int main() {
     mat[2] = swMaterial(swVec3(0.0f, 0.7f, 0.1f), 0.3f, 0.3f, 1.20f);
     mat[3] = swMaterial(swVec3(0.6f, 0.6f, 0.6f), 0.5f, 0.0f, 1.00f);
 
-    const swMaterial WHITE_MAT = swMaterial(swVec3(1.0f, 1.0f, 1.0f), 0.0f, 0.0f, 1.01f);
-    const swMaterial GREEN_MAT = swMaterial(swVec3(0.3125f, 0.86f, 0.39f), 0.0f, 0.0f, 1.01f);
-    const swMaterial RED_MAT = swMaterial(swVec3(0.95f, 0.30f, 0.30f), 0.0f, 0.0f, 1.01f);
+    const swMaterial WHITE_MAT =     swMaterial(swVec3(1.0f, 1.0f, 1.0f),      0.0f, 0.0f, 1.01f);
+    const swMaterial GREEN_MAT =     swMaterial(swVec3(0.3125f, 0.86f, 0.39f), 0.0f, 0.0f, 1.01f);
+    const swMaterial RED_MAT =       swMaterial(swVec3(0.95f, 0.30f, 0.30f),  0.0f, 0.0f, 1.01f);
     const swMaterial YELLOWISH_MAT = swMaterial(swVec3(0.95f, 0.865f, 0.49f), 0.0f, 0.0f, 1.01f);
-    const swMaterial MIRROR = swMaterial(swVec3(0.6f, 0.6f, 0.6f), 0.2f, 0.0f, 1.01f);
-    const swMaterial GLASS = swMaterial(swVec3(1.0f, 1.0f, 1.0f), 0.1f, 0.9f, 1.01f);
+    const swMaterial MIRROR =        swMaterial(swVec3(0.6f, 0.6f, 0.6f),     0.9f, 0.0f, 1.01f);
+    const swMaterial GLASS =         swMaterial(swVec3(0.0f, 0.0f, 1.0f),     0.1f, 0.9f, 1.52f);
 
-    const swMaterial WHITE_LIGHT = swMaterial(swVec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 1.01f, swVec3(EMITTANCE, EMITTANCE, EMITTANCE));
+    const swMaterial WHITE_LIGHT = swMaterial(swVec3(1.0f, 1.0f, 1.0f), 0.0f, 0.0f, 1.01f, swVec3(EMITTANCE, EMITTANCE, EMITTANCE));
 
-//    swSphere spheres[] = {//Scene: center, radius, material
-//      swSphere(swVec3( 1e5+1,40.8,81.6),  1e5,  mat[0]),//Left
-//      swSphere(swVec3(-1e5+99,40.8,81.6), 1e5,  mat[0]),//Rght
-//      swSphere(swVec3(50,40.8, 1e5),      1e5,  mat[0]),//Back
-//      swSphere(swVec3(50,40.8,-1e5+170),  1e5,  mat[0]),//Frnt
-//      swSphere(swVec3(50, 1e5, 81.6),     1e5,  mat[0]),//Botm
-//      swSphere(swVec3(50,+1e5+100,81.6), 1e5,  mat[0]),//Top
-//      swSphere(swVec3(27,16.5,47),        16.5, mat[1]),//Mirr
-//      swSphere(swVec3(73,16.5,78),        16.5, mat[1]),//Glas
-//      swSphere(swVec3(50,681.6-.27,81.6), 600,  mat[0]) //Lite
-//    };
-
-    scene.push(new swSphere(swVec3(400,75,300), 75, MIRROR));
-    scene.push(new swSphere(swVec3(150,75,200), 75, GLASS));
+    scene.push(new swSphere(swVec3(400,225,300), 75, MIRROR));
+    scene.push(new swSphere(swVec3(450,50,100), 50, GLASS));
 
     scene.push(new swSphere(lightPos, 600, WHITE_LIGHT));
 
@@ -155,18 +180,12 @@ int main() {
     auto translate = swVec3(175,100,100);
     auto czajnik = new Thing(myTeapotVertices, myTeapotVertexCount, transform, translate, GLASS);
     scene.push(czajnik);
-//    auto wesoly_kostek = new Thing(cubeVertices, cubeVertexCount, transform, translate, GLASS);
-//    scene.push(wesoly_kostek);
 
+    transform = scale(75,75,75);
+    translate = swVec3(400,75,300);
+    auto wesoly_kostek = new Thing(cubeVertices, cubeVertexCount, transform, translate, GLASS);
+    scene.push(wesoly_kostek);
 
-//    for (int i = 0; i < 2 * 2 * 2; i++) {
-//        scene.push(new swSphere(swVec3(
-//                                      (float)(-6 + 12 * (i & 1)),
-//                                      (float)(-6 + 12 * ((i >> 1) & 1)),
-//                                      (float)(-6 + 12 * ((i >> 2) & 1))
-//                                        ),
-//                                 3.5, mat[i % 3]));
-//    }
 
     Triangle box[] = {
         /// floor
@@ -174,13 +193,13 @@ int main() {
             swVec3(552.8, 000.0, 000.0),
             swVec3(000.0, 000.0, 000.0),
             swVec3(000.0, 000.0, 559.2),
-        YELLOWISH_MAT
+        WHITE_MAT
             ),
         Triangle(
             swVec3(552.8, 000.0, 000.0),
             swVec3(000.0, 000.0, 559.2),
             swVec3(549.6, 000.0, 559.2),
-        YELLOWISH_MAT
+        WHITE_MAT
             ),
         // left wall
         Triangle(
@@ -251,7 +270,7 @@ int main() {
 
     // Ray Trace pixels
     int depth = 0;
-    int ss_size = 1000;
+    int ss_size = 1200;
 
     float subpixel_center = (1.0f / (float)ss_size) / 2;
     float subpixel_size = 1.0f / (float)ss_size;
