@@ -15,12 +15,12 @@ class Thing : public Intersectable
         delete [] triangles;
     }
 
-    Thing(const float* vertices, int vertexCount, const Mat3 &transform, const swVec3 &transpose, const swMaterial &material );
+    Thing(const float* vertices, unsigned int vertexCount, const Mat3 &transform, const swVec3 &transpose, const swMaterial &material );
 
     bool intersect(const swRay &r, swIntersection &isect) final;
 
   public:
-    int triangleCount;
+    unsigned int triangleCount;
     Triangle* triangles;
     Triangle box[12]{};
 

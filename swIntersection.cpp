@@ -11,16 +11,23 @@ float uniform() {
     return dis(gen);
 }
 
+//void createCoordinateSystem(const swVec3 &N, swVec3 &Nt, swVec3 &Nb)
+//{
+//    if (std::fabs(N.x()) > std::fabs(N.y())) {
+//        Nt = swVec3(N.z(), 0, -N.x()) / sqrtf(N.x() * N.x() + N.z() * N.z());
+//    }
+//    else {
+//        Nt = swVec3(0, -N.z(), N.y()) / sqrtf(N.y() * N.y() + N.z() * N.z());
+//    }
+//    Nb = N % Nt;
+//}
+
 void createCoordinateSystem(const swVec3 &N, swVec3 &Nt, swVec3 &Nb)
 {
-    if (std::fabs(N.x()) > std::fabs(N.y())) {
-        Nt = swVec3(N.z(), 0, -N.x()) / sqrtf(N.x() * N.x() + N.z() * N.z());
-    }
-    else {
-        Nt = swVec3(0, -N.z(), N.y()) / sqrtf(N.y() * N.y() + N.z() * N.z());
-    }
+    Nt = swVec3(-N.y(), N.x(), 0);
     Nb = N % Nt;
 }
+
 
 swVec3 getRandomRayDir(swVec3 vec) {
     // randomly sampled from hemisphere directed as vec
@@ -58,6 +65,7 @@ swVec3 getRandomRayDir2(swVec3 vec)
 }
 
 swVec3 getRandomCosineWeightedRay(swVec3 vec) {
+    // fixme
     // randomly sampled from hemisphere directed as vec
     float phi = acos(1 - uniform());
     float theta = 2 * PI * uniform();
@@ -85,7 +93,7 @@ swRay swIntersection::getShadowRay(const swVec3 &L, float d) const {
     return {mPosition, L, 0.0f, 0.01f, d};
 }
 
-swRay swIntersection::getReflectedRay(void) {
+swRay swIntersection::getReflectedRay() const {
     swVec3 N = mNormal;
     const swVec3 D = mRay.dir;
 
@@ -97,7 +105,7 @@ swRay swIntersection::getReflectedRay(void) {
     return {mPosition, R, 0.0f, 0.01f, FLT_MAX};
 }
 
-swRay swIntersection::getRefractedRay(void) {
+swRay swIntersection::getRefractedRay() const {
     const swVec3 &D = mRay.dir;
     swVec3 N = mNormal;
     swVec3 O; // O : outgoing refracted vector

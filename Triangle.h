@@ -18,7 +18,7 @@ class Triangle : public Intersectable
     ~Triangle() = default;
     Triangle(const swVec3 &vtx1, const swVec3 &vtx2, const swVec3 &vtx3, const swMaterial &material);
 
-    bool intersect(const swRay &r, swIntersection &isect) final;
+    bool intersect(const swRay &r, swIntersection &isect) override;
     bool intersect(const swRay &r) const;
 
   public:
@@ -30,7 +30,6 @@ class Triangle : public Intersectable
     swVec3 e1;
     swVec3 e2;
     swVec3 n;
-    float d{};
 };
 
 #endif // RAYTRACER_TRIANGLE_H

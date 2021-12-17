@@ -63,5 +63,4 @@ Triangle::Triangle(const swVec3 &vtx1, const swVec3 &vtx2, const swVec3 &vtx3,
     this->e1 = v1 - v0;
     this->e2 = v2 - v0;
     this->n = e1 % e2;
-    this->d = n * v0;
 }

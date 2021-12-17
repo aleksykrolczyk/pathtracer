@@ -30,6 +30,7 @@
 #include "Thing.h"
 #include "myTeapot.h"
 #include "cube.h"
+#include "SmoothThing.h"
 
 const Color BLACK = Color(0, 0, 0);
 const Color WHITE = Color(1.0f, 1.0f, 1.0f);
@@ -86,15 +87,15 @@ Mat3 rotateY(float alpha) {
 Mat3 rotateZ(float alpha) {
     auto _sin = sin(alpha);
     auto _cos = cos(alpha);
-    swVec3 v0(_cos, -_sin,0);
-    swVec3 v1(_sin, _cos, 0);
+    swVec3 v0(_cos, _sin,0);
+    swVec3 v1(-_sin, _cos, 0);
     swVec3 v2(0,    0,    1);
     return { v0, v1, v2 };
 }
 
 //const swVec3 lightPos(275, 470, 250);
 //(556.0, 548.8, 559.2)
-const swVec3 lightPos(275.0, 1110, 275);
+const swVec3 lightPos(275.0, 670, 275);
 #define ALPHA 0.1f
 #define COEFF 0.9f
 #define EMITTANCE 5.0f
@@ -145,7 +146,7 @@ Color traceRay(const swRay &r, swScene scene, int depth) {
 }
 
 int main() {
-    int imageWidth = 1024;
+    int imageWidth = 1440;
     int imageHeight = imageWidth;
     const int numChannels = 3;
     uint8_t *pixels = new uint8_t[imageWidth * imageHeight * numChannels];
@@ -165,26 +166,34 @@ int main() {
     const swMaterial YELLOWISH_MAT = swMaterial(swVec3(0.95f, 0.865f, 0.49f), 0.0f, 0.0f, 1.01f);
     const swMaterial MIRROR =        swMaterial(swVec3(0.6f, 0.6f, 0.6f),     0.9f, 0.0f, 1.01f);
     const swMaterial GLASS =         swMaterial(swVec3(0.0f, 0.0f, 1.0f),     0.1f, 0.9f, 1.52f);
+    const swMaterial PORCELAIN =     swMaterial(swVec3(0.93f,0.89f,0.81f),     0.1f, 0.0f, 1.01f);
 
     const swMaterial WHITE_LIGHT = swMaterial(swVec3(1.0f, 1.0f, 1.0f), 0.0f, 0.0f, 1.01f, swVec3(EMITTANCE, EMITTANCE, EMITTANCE));
 
-    scene.push(new swSphere(swVec3(400,225,300), 75, MIRROR));
-    scene.push(new swSphere(swVec3(450,50,100), 50, GLASS));
+    scene.push(new swSphere(swVec3(470,75,100), 75, MIRROR));
+    scene.push(new swSphere(swVec3(120,75,100), 75, GLASS));
 
-    scene.push(new swSphere(lightPos, 600, WHITE_LIGHT));
+    scene.push(new swSphere(lightPos, 210, WHITE_LIGHT));
 
     auto transform = scale(200,200,200);
 //    auto rotationX = rotateX(PI/4);
     auto rotationY = rotateY(PI/8);
     transform = transform * rotationY;
-    auto translate = swVec3(175,100,100);
-    auto czajnik = new Thing(myTeapotVertices, myTeapotVertexCount, transform, translate, GLASS);
+    auto translate = swVec3(175,100,320);
+    auto czajnik = new SmoothThing(myTeapotVertices, myTeapotVertexNormals, myTeapotVertexCount, transform, translate, PORCELAIN);
     scene.push(czajnik);
 
-    transform = scale(75,75,75);
-    translate = swVec3(400,75,300);
+    transform = scale(40,100,50);
+    translate = swVec3(280,50,120);
     auto wesoly_kostek = new Thing(cubeVertices, cubeVertexCount, transform, translate, GLASS);
     scene.push(wesoly_kostek);
+
+
+    transform = scale(100,30,30);
+    translate = swVec3(330, 30,450);
+
+    auto cokol = new Thing(cubeVertices, cubeVertexCount, transform, translate, YELLOWISH_MAT);
+    scene.push(cokol);
 
 
     Triangle box[] = {
@@ -270,7 +279,7 @@ int main() {
 
     // Ray Trace pixels
     int depth = 0;
-    int ss_size = 1200;
+    int ss_size = 1500;
 
     float subpixel_center = (1.0f / (float)ss_size) / 2;
     float subpixel_size = 1.0f / (float)ss_size;
@@ -278,8 +287,9 @@ int main() {
 
     std::cout << "Rendering\n";
     auto start = std::chrono::high_resolution_clock::now();
+    int c = 0;
 
-#pragma omp parallel for schedule(static) default(none) shared(imageHeight, imageWidth, ss_size, subpixel_size, subpixel_center, camera, scene, depth, inv_sqr_ss, pixels, std::cout)
+#pragma omp parallel for schedule(dynamic, 1) default(none) shared(imageHeight, imageWidth, ss_size, subpixel_size, subpixel_center, camera, scene, depth, inv_sqr_ss, pixels, std::cout, c)
     for (int j = 0; j < imageHeight; ++j) {
         for (int i = 0; i < imageWidth; ++i) {
             Color pixel_sum;
@@ -305,6 +315,11 @@ int main() {
 //            Color output_pixel = pixel_sum * inv_sqr_ss;
             WriteColor((j * imageWidth + i) * numChannels, output_pixel,
                        pixels);
+        }
+#pragma omp critical
+        {
+            c++;
+            std::cout << (float)c / (float)imageHeight * 100 << "%\n";
         }
     }
     stbi_write_png("out.png", imageWidth, imageHeight, numChannels, pixels,
