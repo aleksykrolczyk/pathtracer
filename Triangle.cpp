@@ -2,7 +2,6 @@
 // Created by Adam Korytowski on 11/12/2021.
 //
 
-#include <iostream>
 #include "Triangle.h"
 
 #define EPSILON 0.001

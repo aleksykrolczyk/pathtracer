@@ -22,12 +22,6 @@ float uniform() {
 //    Nb = N % Nt;
 //}
 
-void createCoordinateSystem(const swVec3 &N, swVec3 &Nt, swVec3 &Nb)
-{
-    Nt = swVec3(-N.y(), N.x(), 0);
-    Nb = N % Nt;
-}
-
 
 swVec3 getRandomRayDir(swVec3 vec) {
     // randomly sampled from hemisphere directed as vec
@@ -46,44 +40,26 @@ swVec3 getRandomRayDir(swVec3 vec) {
     }
 }
 
-swVec3 getRandomRayDir2(swVec3 vec)
-{
-    float u1 = uniform();
-    float u2 = uniform();
-    const double r = sqrt(1.0-u1*u1);
-    const double phi = 2 * PI * u2;
-    float x=cos(phi)*r, y=sin(phi)*r ,z = u1;
-
-     swVec3 Nt, Nb;
-     createCoordinateSystem(vec, Nt, Nb);
-
-     return {
-       x * Nb.x() + y * vec.x() + z * Nt.x(),
-       x * Nb.y() + y * vec.y() + z * Nt.y(),
-       x * Nb.z() + y* vec.z() + z * Nt.z()
-     };
-}
-
-swVec3 getRandomCosineWeightedRay(swVec3 vec) {
-    // fixme
-    // randomly sampled from hemisphere directed as vec
-    float phi = acos(1 - uniform());
-    float theta = 2 * PI * uniform();
-    auto cart_vec = swVec3(
-      cos(phi) * sin(theta),
-      sin(phi) * sin(theta),
-      cos(theta)
-    );
-
-    swVec3 Nt, Nb;
-    createCoordinateSystem(vec, Nt, Nb);
-
-    return {
-          cart_vec.x() * Nb.x() + cart_vec.y() * vec.x() + cart_vec.z() * Nt.x(),
-          cart_vec.x() * Nb.y() + cart_vec.y() * vec.y() + cart_vec.z() * Nt.y(),
-          cart_vec.x() * Nb.z() + cart_vec.y() * vec.z() + cart_vec.z() * Nt.z()
-      };
-}
+//swVec3 getRandomCosineWeightedRay(swVec3 vec) {
+//    // fixme
+//    // randomly sampled from hemisphere directed as vec
+//    float phi = acos(1 - uniform());
+//    float theta = 2 * PI * uniform();
+//    auto cart_vec = swVec3(
+//      cos(phi) * sin(theta),
+//      sin(phi) * sin(theta),
+//      cos(theta)
+//    );
+//
+//    swVec3 Nt, Nb;
+//    createCoordinateSystem(vec, Nt, Nb);
+//
+//    return {
+//          cart_vec.x() * Nb.x() + cart_vec.y() * vec.x() + cart_vec.z() * Nt.x(),
+//          cart_vec.x() * Nb.y() + cart_vec.y() * vec.y() + cart_vec.z() * Nt.y(),
+//          cart_vec.x() * Nb.z() + cart_vec.y() * vec.z() + cart_vec.z() * Nt.z()
+//      };
+//}
 
 swRay swIntersection::getRandomRay() const {
     return {mPosition, getRandomRayDir(mNormal), 0.0f, 0.01f, FLT_MAX};

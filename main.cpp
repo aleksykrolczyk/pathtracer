@@ -6,11 +6,9 @@
  *  Copyright (c) 2021 Michael Doggett
  */
 #define _USE_MATH_DEFINES
-#include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <random>
-#include <vector>
 #include <omp.h>
 #include <memory>
 #define STB_IMAGE_IMPLEMENTATION
@@ -146,7 +144,7 @@ Color traceRay(const swRay &r, swScene scene, int depth) {
 }
 
 int main() {
-    int imageWidth = 1440;
+    int imageWidth = 512;
     int imageHeight = imageWidth;
     const int numChannels = 3;
     uint8_t *pixels = new uint8_t[imageWidth * imageHeight * numChannels];
@@ -279,7 +277,7 @@ int main() {
 
     // Ray Trace pixels
     int depth = 0;
-    int ss_size = 1500;
+    int ss_size = 50;
 
     float subpixel_center = (1.0f / (float)ss_size) / 2;
     float subpixel_size = 1.0f / (float)ss_size;
@@ -293,26 +291,14 @@ int main() {
     for (int j = 0; j < imageHeight; ++j) {
         for (int i = 0; i < imageWidth; ++i) {
             Color pixel_sum;
-//            for (int ssi = 0; ssi < ss_size; ssi++) {
-//                for (int ssj = 0; ssj < ss_size; ssj++) {
-//
-//                    float cx = ((float)i) +
-//                               ((float)ssi * subpixel_size + subpixel_center);
-//                    float cy = ((float)j) +
-//                               ((float)ssj * subpixel_size + subpixel_center);
-//
-//                    swRay r = camera.getRay(cx, cy);
-//                    pixel_sum += traceRay(r, scene, depth);
-//                }
-//            }
-//            std::cout << i << " " << j << " ";
+
             for(int ss = 0; ss < ss_size; ss++) {
                 float u1 = uniform2() - 0.5f, u2 = uniform2() - 0.5f;
                 swRay r = camera.getRay((float)i + u1, (float)j + u2);
                 pixel_sum += traceRay(r, scene, 0);
             }
             Color output_pixel = pixel_sum / ss_size;
-//            Color output_pixel = pixel_sum * inv_sqr_ss;
+
             WriteColor((j * imageWidth + i) * numChannels, output_pixel,
                        pixels);
         }
@@ -327,80 +313,3 @@ int main() {
     delete[] pixels;
     std::cout << "rendering done in " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << " ms\n";
 }
-
-//Color traceRay(const swRay &r, swScene scene, int depth) {
-//    //    Color directColor;
-//
-//    //    const swVec3 gLightPos(20, 240, -7);
-//    const swVec3 gLightPos(275,500,475);
-//    //    const swVec3 gLightPos(278,547, 0);
-//
-//    swIntersection hp, si;
-//    if (!scene.intersect(r, hp)) {
-//        return BLACK;
-//    }
-//
-//    if (depth >= 10) {
-//        return BLACK;
-//    }
-//    //
-//    //    swVec3 lightDir = gLightPos - hp.mPosition;
-//    //    float dist = lightDir.length() / (PI4 * E); // ~ 264.785
-//    //    lightDir.normalize();
-//
-//    //    bool is_illuminated = !scene.intersect(hp.getShadowRay(lightDir), si, true);
-//    //    directColor = is_illuminated ? hp.mMaterial.mColor * (hp.mNormal * lightDir) / (dist * dist) : BLACK;
-//
-//    if (hp.mMaterial.emittance.z() > 0) {
-//        // if is light source
-//        float dist = hp.mHitTime / (PI4 * E);
-//        return hp.mMaterial.emittance / (dist * dist);
-//    }
-//
-//    swVec3 c = hp.mMaterial.mColor;
-//    //    float mc = c.x() > c.y() && c.x() > c.z() ? c.x() : c.y() > c.z() ? c.y() : c.z();
-//    //    float x = uniform2();
-//    //    if (x > mc) {
-//    //        return hp.mMaterial.emittance;
-//    //    }
-//    //    c = c / mc;
-//
-//    //    auto ray = hp.getRandomRay();
-//    //    if (!scene.intersect(ray, hp)) {
-//    //        return directColor;
-//    //    }
-//
-//
-//    swVec3 received;
-//    if (depth >= 9) {
-//        received = BLACK;
-//    } else {
-//        received = traceRay(hp.getRandomRay(), scene, depth + 1);
-//        //        received = received.elemMul(traceRay(hp.getRandomRay(), scene, depth + 1));
-//    }
-//
-//    return hp.mMaterial.emittance + c.elemMul(received);
-//    //    return  traceRay2(hp, scene, depth - 1);
-//
-//    //    float refl = hp.mMaterial.reflectivity;
-//    //    float trans = hp.mMaterial.transparency;
-//
-//
-//    //    bool is_illuminated = !scene.intersect(hp.getShadowRay(lightDir), si, true);
-//    //    directColor = is_illuminated ? hp.mMaterial.mColor : BLACK;
-//
-//    //    directColor = directColor * (hp.mNormal * lightDir) / (dist * dist);
-//
-//
-//
-//    //    Color rc, tc;
-//    //    if (refl > 0) {
-//    //        rc = traceRay(hp.getReflectedRay(), scene, depth - 1);
-//    //    }
-//    //
-//    //    if (trans > 0) {
-//    //        tc = traceRay(hp.getRefractedRay(), scene, depth - 1);
-//    //    }
-//    //
-//    //    c = (1 - refl - trans) * directColor + refl * rc + trans * tc;
-//}
