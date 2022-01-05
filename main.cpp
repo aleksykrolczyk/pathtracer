@@ -298,9 +298,11 @@ int main() {
                 pixel_sum += traceRay(r, scene, 0);
             }
             Color output_pixel = pixel_sum / ss_size;
-
-            WriteColor((j * imageWidth + i) * numChannels, output_pixel,
-                       pixels);
+#pragma omp critical
+            {
+                WriteColor((j * imageWidth + i) * numChannels, output_pixel,
+                           pixels);
+            }
         }
 #pragma omp critical
         {
